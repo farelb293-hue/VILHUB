@@ -6,7 +6,7 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
 -- [[ GLOBAL VARIABLES ]] --
-local flySpeed = 50 -- Nama variabel diperjelas agar tidak bentrok
+_G.FlySpeed = 50 -- Menggunakan Global Variable agar pasti terbaca
 local flying = false
 local autoGen = false
 local autoDagger = false
@@ -36,78 +36,71 @@ MainTab:Button({
 
         flying = not flying
         if flying then
+            -- Buat BodyVelocity
             bv = Instance.new("BodyVelocity")
+            bv.Name = "VilhubFlyBV"
             bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-            bv.Velocity = Vector3.new(0, 0, 0)
             bv.Parent = root
             
+            -- Buat BodyGyro
             bg = Instance.new("BodyGyro")
+            bg.Name = "VilhubFlyBG"
             bg.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
             bg.P = 10000
             bg.Parent = root
             
+            -- Loop Terbang
             task.spawn(function()
-                while flying do
-                    if root and bv and bg then
-                        bg.CFrame = workspace.CurrentCamera.CFrame
-                        -- Variabel flySpeed sekarang terpanggil dengan benar di sini
-                        bv.Velocity = workspace.CurrentCamera.CFrame.LookVector * flySpeed
-                    end
+                while flying and root and bv and bg do
+                    bg.CFrame = workspace.CurrentCamera.CFrame
+                    -- Mengambil nilai langsung dari _G.FlySpeed
+                    bv.Velocity = workspace.CurrentCamera.CFrame.LookVector * _G.FlySpeed
                     task.wait(0.01)
                 end
             end)
         else
-            if bv then bv:Destroy() end
-            if bg then bg:Destroy() end
+            -- Hapus efek terbang
+            flying = false
+            if root:FindFirstChild("VilhubFlyBV") then root.VilhubFlyBV:Destroy() end
+            if root:FindFirstChild("VilhubFlyBG") then root.VilhubFlyBG:Destroy() end
         end
     end
 })
 
 MainTab:Slider({
     Title = "Speed Terbang",
-    Min = 10, 
-    Max = 300, 
+    Min = 0, 
+    Max = 500, 
     Default = 50,
     Callback = function(v) 
-        flySpeed = v -- Ini akan langsung merubah kecepatan saat terbang aktif
+        _G.FlySpeed = v -- Update nilai global
     end
 })
 
--- [[ 2. COMBAT TAB: AUTO DAGGER ]] --
+-- [[ 2. COMBAT TAB ]] --
 CombatTab:Toggle({
     Title = "Auto Dagger",
     Callback = function(state) autoDagger = state end
 })
 
--- [[ 3. AUTOMATION TAB: AUTO GEN ]] --
+-- [[ 3. AUTOMATION TAB ]] --
 AutoTab:Toggle({
-    Title = "Auto Repair Generator",
+    Title = "Auto Repair Gen",
     Callback = function(state) autoGen = state end
 })
 
--- ==================== LOGIC CORE ====================
-
--- LOGIC: AUTO DAGGER
-task.spawn(function()
-    while task.wait(0.1) do
-        if autoDagger and player.Character then
-            local tool = player.Character:FindFirstChildOfClass("Tool")
-            if tool and (tool.Name:lower():find("dagger") or tool.Name:lower():find("knife")) then
-                tool:Activate() 
-            end
+-- [[ LOGIC CORE ]] --
+RunService.Heartbeat:Connect(function()
+    if autoDagger and player.Character then
+        local tool = player.Character:FindFirstChildOfClass("Tool")
+        if tool and (tool.Name:lower():find("dagger") or tool.Name:lower():find("knife")) then
+            tool:Activate() 
         end
     end
 end)
 
--- LOGIC: AUTO GEN
-task.spawn(function()
-    while task.wait(0.5) do
-        if autoGen then
-            for _, obj in pairs(workspace:GetDescendants()) do
-                if obj.Name == "Generator" and obj:FindFirstChild("RemoteEvent") then
-                    obj.RemoteEvent:FireServer("Repair") 
-                end
-            end
-        end
-    end
-end)
+Window:Notification({
+    Title = "VILHUB",
+    Content = "Script Fixed! Coba geser slidernya.",
+    Duration = 3
+})
