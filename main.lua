@@ -7,15 +7,20 @@ local player = Players.LocalPlayer
 
 -- [[ GLOBAL VARIABLES ]] --
 _G.FlySpeed = 50
-local flying, autoGen, autoDagger, autoShootKiller, espEnabled = false, false, false, false, false
+local flying = false
+local autoGen = false
+local autoDagger = false
+local autoShootKiller = false
+local espEnabled = false
+local walkSpeedValue = 16
 
--- [[ WINDOW ]] --
+-- [[ WINDOW CONFIGURATION ]] --
 local Window = WindUI:CreateWindow({
-    Title = "VILHUB V2.6 (FIXED)",
+    Title = "VILHUB V3 FULL",
     Icon = "rbxassetid://136360402262473",
     Author = "Vilhub",
     Theme = "Indigo",
-    Size = UDim2.fromOffset(450, 420)
+    Size = UDim2.fromOffset(480, 420)
 })
 
 -- [[ TABS ]] --
@@ -24,7 +29,7 @@ local CombatTab = Window:Tab({ Title = "Combat", Icon = "crosshair" })
 local VisualTab = Window:Tab({ Title = "Visuals", Icon = "eye" })
 local AutoTab = Window:Tab({ Title = "Automation", Icon = "cpu" })
 
--- [[ 1. MAIN TAB ]] --
+-- [[ 1. MAIN TAB: MOVEMENT ]] --
 MainTab:Button({
     Title = "Aktifkan/Matikan Fly",
     Callback = function()
@@ -32,19 +37,22 @@ MainTab:Button({
         local root = char and char:FindFirstChild("HumanoidRootPart")
         local hum = char and char:FindFirstChild("Humanoid")
         if not root or not hum then return end
+
         flying = not flying
         if flying then
             local bv = Instance.new("BodyVelocity", root)
             bv.Name = "VilFlyBV"
             bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+            
             local bg = Instance.new("BodyGyro", root)
             bg.Name = "VilFlyBG"
             bg.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
+            
             task.spawn(function()
                 while flying and root and bv and bg do
                     bg.CFrame = workspace.CurrentCamera.CFrame
                     bv.Velocity = workspace.CurrentCamera.CFrame.LookVector * _G.FlySpeed
-                    hum:ChangeState(Enum.HumanoidStateType.Running)
+                    hum:ChangeState(Enum.HumanoidStateType.Running) -- Animasi kaki gerak
                     task.wait(0.01)
                 end
                 if bv then bv:Destroy() end
@@ -61,64 +69,21 @@ MainTab:Slider({
     Callback = function(v) _G.FlySpeed = tonumber(v) or 50 end
 })
 
+MainTab:Slider({
+    Title = "WalkSpeed (Jalan Kaki)",
+    Min = 16, Max = 200, Default = 16,
+    Callback = function(v) walkSpeedValue = v end
+})
+
 -- [[ 2. COMBAT TAB ]] --
-CombatTab:Toggle({ Title = "Auto Dagger", Callback = function(state) autoDagger = state end })
-CombatTab:Toggle({ Title = "Auto Look & Shoot Killer", Callback = function(state) autoShootKiller = state end })
-
--- [[ 3. VISUAL TAB ]] --
-VisualTab:Toggle({
-    Title = "ESP Killer",
-    Callback = function(state) espEnabled = state end
+CombatTab:Toggle({
+    Title = "Auto Dagger / Knife",
+    Callback = function(state) autoDagger = state end
 })
 
--- [[ 4. AUTOMATION TAB ]] --
-AutoTab:Toggle({
-    Title = "Auto Repair Gen",
-    Callback = function(state) autoGen = state end
+CombatTab:Toggle({
+    Title = "Auto Look & Shoot Killer",
+    Callback = function(state) autoShootKiller = state end
 })
 
--- [[ LOGIC CORE ]] --
-
--- Fungsi Cerdas Deteksi Killer
-local function isKiller(p)
-    if not p.Character then return false end
-    -- Cek Team Merah
-    if p.TeamColor == BrickColor.new("Really red") then return true end
-    -- Cek Nama
-    if p.Name:lower():find("killer") or p.DisplayName:lower():find("killer") then return true end
-    -- Cek Senjata yang dipegang
-    local tool = p.Character:FindFirstChildOfClass("Tool")
-    if tool and (tool.Name:lower():find("knife") or tool.Name:lower():find("dagger") or tool.Name:lower():find("hammer")) then
-        return true
-    end
-    return false
-end
-
--- Loop ESP & Auto Gen
-RunService.Heartbeat:Connect(function()
-    -- ESP LOGIC
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= player and p.Character then
-            local highlight = p.Character:FindFirstChild("VilESP")
-            if espEnabled and isKiller(p) then
-                if not highlight then
-                    highlight = Instance.new("Highlight", p.Character)
-                    highlight.Name = "VilESP"
-                    highlight.FillColor = Color3.fromRGB(255, 0, 0)
-                end
-            elseif highlight then
-                highlight:Destroy()
-            end
-        end
-    end
-
-    -- AUTO GEN LOGIC (Mencari segala hal yang mirip Generator)
-    if autoGen then
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if (obj.Name:lower():find("generator") or obj.Name:lower():find("engine")) and obj:FindFirstChildOfClass("RemoteEvent") then
-                obj:FindFirstChildOfClass("RemoteEvent"):FireServer("Repair")
-                obj:FindFirstChildOfClass("RemoteEvent"):FireServer("Fix")
-            end
-        end
-    end
-end)
+-- [[ 3.
