@@ -6,7 +6,7 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
 -- [[ GLOBAL VARIABLES ]] --
-local speed = 50
+local flySpeed = 50 -- Nama variabel diperjelas agar tidak bentrok
 local flying = false
 local autoGen = false
 local autoDagger = false
@@ -18,7 +18,7 @@ local Window = WindUI:CreateWindow({
     Icon = "rbxassetid://136360402262473",
     Author = "Vilhub",
     Theme = "Indigo",
-    Size = UDim2.fromOffset(450, 400) -- Ukuran sedikit diperbesar untuk tab baru
+    Size = UDim2.fromOffset(450, 400)
 })
 
 -- [[ TABS ]] --
@@ -36,16 +36,24 @@ MainTab:Button({
 
         flying = not flying
         if flying then
-            bv = Instance.new("BodyVelocity", root)
+            bv = Instance.new("BodyVelocity")
             bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-            bg = Instance.new("BodyGyro", root)
+            bv.Velocity = Vector3.new(0, 0, 0)
+            bv.Parent = root
+            
+            bg = Instance.new("BodyGyro")
             bg.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
+            bg.P = 10000
+            bg.Parent = root
             
             task.spawn(function()
                 while flying do
-                    bg.CFrame = workspace.CurrentCamera.CFrame
-                    bv.Velocity = workspace.CurrentCamera.CFrame.LookVector * speed
-                    task.wait(0.05)
+                    if root and bv and bg then
+                        bg.CFrame = workspace.CurrentCamera.CFrame
+                        -- Variabel flySpeed sekarang terpanggil dengan benar di sini
+                        bv.Velocity = workspace.CurrentCamera.CFrame.LookVector * flySpeed
+                    end
+                    task.wait(0.01)
                 end
             end)
         else
@@ -57,17 +65,18 @@ MainTab:Button({
 
 MainTab:Slider({
     Title = "Speed Terbang",
-    Min = 10, Max = 200, Default = 50,
-    Callback = function(v) speed = v end
+    Min = 10, 
+    Max = 300, 
+    Default = 50,
+    Callback = function(v) 
+        flySpeed = v -- Ini akan langsung merubah kecepatan saat terbang aktif
+    end
 })
 
 -- [[ 2. COMBAT TAB: AUTO DAGGER ]] --
 CombatTab:Toggle({
     Title = "Auto Dagger",
-    Description = "Otomatis menyerang saat memegang pisau",
-    Callback = function(state) 
-        autoDagger = state 
-    end
+    Callback = function(state) autoDagger = state end
 })
 
 -- [[ 3. AUTOMATION TAB: AUTO GEN ]] --
@@ -78,17 +87,13 @@ AutoTab:Toggle({
 
 -- ==================== LOGIC CORE ====================
 
--- LOGIC: AUTO DAGGER (Setiap 0.1 detik cek senjata)
+-- LOGIC: AUTO DAGGER
 task.spawn(function()
     while task.wait(0.1) do
-        if autoDagger then
-            local char = player.Character
-            if char then
-                local tool = char:FindFirstChildOfClass("Tool")
-                -- Cek apakah nama item mengandung kata 'Dagger' atau 'Knife'
-                if tool and (tool.Name:lower():find("dagger") or tool.Name:lower():find("knife")) then
-                    tool:Activate() 
-                end
+        if autoDagger and player.Character then
+            local tool = player.Character:FindFirstChildOfClass("Tool")
+            if tool and (tool.Name:lower():find("dagger") or tool.Name:lower():find("knife")) then
+                tool:Activate() 
             end
         end
     end
@@ -106,10 +111,3 @@ task.spawn(function()
         end
     end
 end)
-
--- Notifikasi Berhasil Update
-Window:Notification({
-    Title = "VILHUB",
-    Content = "Tab Combat & Auto Dagger Berhasil Ditambahkan!",
-    Duration = 5
-})
