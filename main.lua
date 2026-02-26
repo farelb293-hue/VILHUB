@@ -18,7 +18,7 @@ local Window = WindUI:CreateWindow({
     Icon = "rbxassetid://136360402262473",
     Author = "Vilhub",
     Theme = "Indigo",
-    Size = UDim2.fromOffset(450, 380)
+    Size = UDim2.fromOffset(450, 400) -- Ukuran sedikit diperbesar untuk tab baru
 })
 
 -- [[ TABS ]] --
@@ -63,9 +63,11 @@ MainTab:Slider({
 
 -- [[ 2. COMBAT TAB: AUTO DAGGER ]] --
 CombatTab:Toggle({
-    Title = "Auto Dagger / Attack",
-    Description = "Otomatis menyerang jika memegang Dagger",
-    Callback = function(state) autoDagger = state end
+    Title = "Auto Dagger",
+    Description = "Otomatis menyerang saat memegang pisau",
+    Callback = function(state) 
+        autoDagger = state 
+    end
 })
 
 -- [[ 3. AUTOMATION TAB: AUTO GEN ]] --
@@ -76,13 +78,17 @@ AutoTab:Toggle({
 
 -- ==================== LOGIC CORE ====================
 
--- LOGIC: AUTO DAGGER
+-- LOGIC: AUTO DAGGER (Setiap 0.1 detik cek senjata)
 task.spawn(function()
     while task.wait(0.1) do
         if autoDagger then
-            local tool = player.Character:FindFirstChildOfClass("Tool")
-            if tool and (tool.Name:lower():find("dagger") or tool.Name:lower():find("knife")) then
-                tool:Activate() -- Menekan/Klik Dagger otomatis
+            local char = player.Character
+            if char then
+                local tool = char:FindFirstChildOfClass("Tool")
+                -- Cek apakah nama item mengandung kata 'Dagger' atau 'Knife'
+                if tool and (tool.Name:lower():find("dagger") or tool.Name:lower():find("knife")) then
+                    tool:Activate() 
+                end
             end
         end
     end
@@ -101,8 +107,9 @@ task.spawn(function()
     end
 end)
 
+-- Notifikasi Berhasil Update
 Window:Notification({
-    Title = "VILHUB UPDATED",
-    Content = "Fitur Auto Dagger & Auto Gen Siap!",
+    Title = "VILHUB",
+    Content = "Tab Combat & Auto Dagger Berhasil Ditambahkan!",
     Duration = 5
 })
