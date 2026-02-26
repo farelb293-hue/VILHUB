@@ -142,3 +142,17 @@ RunService.Heartbeat:Connect(function()
     end
 
     -- LOGIC: AUTO GEN
+    if autoGen then
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj.Name == "Generator" and obj:FindFirstChild("RemoteEvent") then
+                obj.RemoteEvent:FireServer("Repair") 
+            end
+        end
+    end
+end)
+
+Window:Notification({
+    Title = "VILHUB",
+    Content = "Fitur Auto Look Killer Aktif!",
+    Duration = 5
+})
