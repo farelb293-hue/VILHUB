@@ -91,4 +91,61 @@ AutoTab:Button({
             char.HumanoidRootPart.CFrame = targetGen.CFrame * CFrame.new(0, 5, 0)
             Window:Notification({Title = "VILHUB", Content = "Berhasil TP ke Generator!", Duration = 2})
         else
-            Window:Notification({Title = "VILHUB", Content = "
+            Window:Notification({Title = "VILHUB", Content = "Generator tidak ditemukan!", Duration = 2})
+        end
+    end
+})
+
+-- [[ MAIN LOOP ]] --
+RunService.RenderStepped:Connect(function()
+    local char = player.Character
+    if not char then return end
+
+    for _, obj in pairs(workspace:GetDescendants()) do
+        -- LOGIK ESP & COMBAT
+        if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj ~= char then
+            local killerDetected = IsKiller(obj)
+            
+            -- ESP Merah Tembus Tembok
+            local hl = obj:FindFirstChild("VilESP")
+            if _G.ESP_Enabled and killerDetected then
+                if not hl then 
+                    hl = Instance.new("Highlight", obj)
+                    hl.Name = "VilESP"
+                end
+                hl.FillColor = Color3.fromRGB(255, 0, 0)
+                hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            elseif hl then 
+                hl:Destroy() 
+            end
+
+            -- Auto Attack (Dagger/Gun)
+            if _G.AutoCombat and killerDetected and char:FindFirstChild("HumanoidRootPart") then
+                local tool = char:FindFirstChildOfClass("Tool")
+                if tool then
+                    local d = (char.HumanoidRootPart.Position - obj.HumanoidRootPart.Position).Magnitude
+                    if d < 25 then
+                        char.HumanoidRootPart.CFrame = CFrame.lookAt(char.HumanoidRootPart.Position, Vector3.new(obj.HumanoidRootPart.Position.X, char.HumanoidRootPart.Position.Y, obj.HumanoidRootPart.Position.Z))
+                        tool:Activate()
+                    end
+                end
+            end
+        end
+
+        -- LOGIK AUTO REPAIR
+        if _G.AutoGenerator then
+            if (obj.Name:lower():find("gen") or obj.Name:lower():find("engin")) then
+                local remote = obj:FindFirstChildOfClass("RemoteEvent")
+                if remote then
+                    remote:FireServer("Repair")
+                    remote:FireServer("Fix")
+                end
+                -- Support ProximityPrompt (Tombol E)
+                local prompt = obj:FindFirstChildOfClass("ProximityPrompt")
+                if prompt then
+                    fireproximityprompt(prompt)
+                end
+            end
+        end
+    end
+end)
