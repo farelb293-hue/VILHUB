@@ -1,46 +1,58 @@
--- Tunggu game loading sempurna
-if not game:IsLoaded() then game.Loaded:Wait() end
-
--- Panggil library UI
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
--- Buat Window Utama
 local Window = WindUI:CreateWindow({
     Title = "VILHUB",
     Icon = "rbxassetid://136360402262473",
     Author = "Vilhub",
-    Folder = "VilhubData",
     Theme = "Indigo",
-    Size = UDim2.fromOffset(450, 300), -- Ukuran diperkecil biar ringan
-    Transparent = true
+    Size = UDim2.fromOffset(450, 300)
 })
 
--- Buat Tab
 local MainTab = Window:Tab({ Title = "Main", Icon = "home" })
 
--- Tambah Fitur Speed
-MainTab:Slider({
-    Title = "Speed",
-    Min = 16,
-    Max = 200,
-    Default = 16,
-    Callback = function(v)
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v
-    end
-})
+-- FUNGSI TERBANG (FLY)
+local flying = false
+local speed = 50
+local bv, bg
 
--- Tambah Fitur Terbang (Fly)
+local function toggleFly()
+    local char = game.Players.LocalPlayer.Character
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    flying = not flying
+    if flying then
+        bv = Instance.new("BodyVelocity", root)
+        bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+        bg = Instance.new("BodyGyro", root)
+        bg.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
+        
+        task.spawn(function()
+            while flying do
+                bg.CFrame = workspace.CurrentCamera.CFrame
+                bv.Velocity = workspace.CurrentCamera.CFrame.LookVector * speed
+                task.wait(0.05)
+            end
+        end)
+    else
+        if bv then bv:Destroy() end
+        if bg then bg:Destroy() end
+    end
+end
+
+-- TOMBOL DI MENU
 MainTab:Button({
-    Title = "Aktifkan Fly",
+    Title = "Aktifkan/Matikan Fly",
     Callback = function()
-        -- Script terbang simpel kamu yang tadi
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/farelb293-hue/VILHUB/main/main.lua"))() 
+        toggleFly() -- Memanggil fungsi di atas, bukan loadstring lagi
     end
 })
 
--- Notifikasi kalau berhasil
-Window:Notification({
-    Title = "VILHUB",
-    Content = "Script Berhasil Dimuat!",
-    Duration = 3
+MainTab:Slider({
+    Title = "Speed Terbang",
+    Min = 10,
+    Max = 200,
+    Default = 50,
+    Callback = function(v) speed = v end
 })
+
