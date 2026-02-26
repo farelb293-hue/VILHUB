@@ -54,7 +54,6 @@ MainTab:Button({
                     bg.CFrame = workspace.CurrentCamera.CFrame
                     bv.Velocity = workspace.CurrentCamera.CFrame.LookVector * _G.FlySpeed
                     
-                    -- Animasi Kaki Bergerak
                     if hum.MoveDirection.Magnitude > 0 then
                         hum:ChangeState(Enum.HumanoidStateType.Running)
                     else
@@ -84,8 +83,7 @@ CombatTab:Toggle({
 })
 
 CombatTab:Toggle({
-    Title = "Auto Tembak & Look Killer",
-    Description = "Lock target & tembak Killer otomatis",
+    Title = "Auto Look & Shoot Killer",
     Callback = function(state) autoShootKiller = state end
 })
 
@@ -95,64 +93,15 @@ AutoTab:Toggle({
     Callback = function(state) autoGen = state end
 })
 
--- ==================== LOGIC CORE ====================
-
--- Fungsi mencari Killer terdekat
+-- [[ LOGIC CORE ]] --
 local function getKiller()
     local target = nil
     local dist = math.huge
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            -- Deteksi berdasarkan Team Red atau tag 'Killer'
-            if p.TeamColor == BrickColor.new("Really red") or p.Name:lower():find("killer") or p.Character:FindFirstChild("KillerTag") then
+            -- Deteksi Team Merah atau nama Killer
+            if p.TeamColor == BrickColor.new("Really red") or p.Name:lower():find("killer") then
                 local d = (player.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
                 if d < dist then
                     dist = d
-                    target = p.Character.HumanoidRootPart
-                end
-            end
-        end
-    end
-    return target
-end
-
-RunService.Heartbeat:Connect(function()
-    local char = player.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    local tool = char:FindFirstChildOfClass("Tool")
-
-    -- LOGIC: AUTO DAGGER
-    if autoDagger and tool then
-        if tool.Name:lower():find("dagger") or tool.Name:lower():find("knife") then
-            tool:Activate() 
-        end
-    end
-
-    -- LOGIC: AUTO SHOOT & LOOK
-    if autoShootKiller and tool then
-        local target = getKiller()
-        if target then
-            -- AUTO LOOK (Menghadap Killer)
-            local targetPos = Vector3.new(target.Position.X, char.HumanoidRootPart.Position.Y, target.Position.Z)
-            char.HumanoidRootPart.CFrame = CFrame.lookAt(char.HumanoidRootPart.Position, targetPos)
-            
-            -- AUTO SHOOT
-            tool:Activate()
-        end
-    end
-
-    -- LOGIC: AUTO GEN
-    if autoGen then
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if obj.Name == "Generator" and obj:FindFirstChild("RemoteEvent") then
-                obj.RemoteEvent:FireServer("Repair") 
-            end
-        end
-    end
-end)
-
-Window:Notification({
-    Title = "VILHUB",
-    Content = "Fitur Auto Look Killer Aktif!",
-    Duration = 5
-})
+                    target = p.
