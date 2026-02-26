@@ -1,59 +1,68 @@
--- [[ VILHUB V4.1 ULTRA-LITE ]] --
-local function GetLibrary()
-    local success, lib = pcall(function()
-        return loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
-    end)
-    return success and lib or nil
-end
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
-local WindUI = GetLibrary()
-if not WindUI then 
-    warn("Gagal Memuat Library!") 
-    return 
-end
+-- [[ SERVICES ]] --
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+
+-- [[ SETTINGS ]] --
+_G.ESP_Enabled = false
+_G.AutoLook = false
 
 local Window = WindUI:CreateWindow({
-    Title = "VILHUB FIXED",
+    Title = "VILHUB V5 UNIVERSAL",
     Author = "Vilhub",
     Theme = "Indigo",
     Size = UDim2.fromOffset(450, 400)
 })
 
--- [[ TAB GENERATOR DENGAN DELAY AGAR TIDAK KOSONG ]] --
-local MainTab = Window:Tab({ Title = "Main", Icon = "home" })
-task.wait(0.1)
-local CombatTab = Window:Tab({ Title = "Combat", Icon = "crosshair" })
-task.wait(0.1)
 local VisualTab = Window:Tab({ Title = "Visuals", Icon = "eye" })
-task.wait(0.1)
-local AutoTab = Window:Tab({ Title = "Automation", Icon = "cpu" })
+local CombatTab = Window:Tab({ Title = "Combat", Icon = "crosshair" })
 
--- [[ ISI TAB VISUALS (DIPASTIKAN ADA) ]] --
+-- [[ FUNGSI DETEKSI KILLER SUPER AKURAT ]] --
+local function GetKiller(p)
+    if not p.Character then return false end
+    
+    -- 1. Cek dari Senjata yang dipegang
+    local tool = p.Character:FindFirstChildOfClass("Tool")
+    if tool and (tool.Name:lower():find("knife") or tool.Name:lower():find("dagger") or tool.Name:lower():find("hammer") or tool.Name:lower():find("weapon")) then
+        return true
+    end
+    
+    -- 2. Cek dari Team (Merah/Killer)
+    if p.TeamColor == BrickColor.new("Really red") or p.Team.Name:lower():find("killer") then
+        return true
+    end
+    
+    -- 3. Cek dari String Nama
+    if p.Name:lower():find("killer") or p.DisplayName:lower():find("killer") then
+        return true
+    end
+    
+    return false
+end
+
+-- [[ UI TOGGLES ]] --
 VisualTab:Toggle({
-    Title = "ESP Killer",
-    Callback = function(state) 
-        _G.ESP = state 
-    end
+    Title = "ESP Killer (Highlight Merah)",
+    Callback = function(state) _G.ESP_Enabled = state end
 })
 
--- [[ ISI TAB AUTOMATION ]] --
-AutoTab:Toggle({
-    Title = "Auto Repair",
-    Callback = function(state) 
-        _G.AutoRepair = state 
-    end
+CombatTab:Toggle({
+    Title = "Auto Look at Killer",
+    Callback = function(state) _G.AutoLook = state end
 })
 
--- LOGIC UTAMA (RE-WRITTEN)
+-- [[ MAIN LOOP ]] --
 RunService.Heartbeat:Connect(function()
-    if _G.ESP then
-        for _, p in pairs(game.Players:GetPlayers()) do
-            if p ~= game.Players.LocalPlayer and p.Character then
-                local hl = p.Character:FindFirstChild("Highlight")
-                if p.TeamColor == BrickColor.new("Really red") then
-                    if not hl then Instance.new("Highlight", p.Character) end
-                end
-            end
-        end
-    end
-end)
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player and p.Character then
+            local highlight = p.Character:FindFirstChild("VilESP")
+            
+            if _G.ESP_Enabled and GetKiller(p) then
+                -- Buat Highlight jika belum ada
+                if not highlight then
+                    highlight = Instance.new("Highlight")
+                    highlight.Name = "VilESP"
+                    highlight.Parent = p.Character
+                    highlight.FillColor = Color3.fromRGB(255, 0, 0) --
