@@ -9,6 +9,7 @@ local player = Players.LocalPlayer
 local speed = 50
 local flying = false
 local autoGen = false
+local autoDagger = false
 local bv, bg
 
 -- [[ WINDOW CONFIGURATION ]] --
@@ -17,11 +18,12 @@ local Window = WindUI:CreateWindow({
     Icon = "rbxassetid://136360402262473",
     Author = "Vilhub",
     Theme = "Indigo",
-    Size = UDim2.fromOffset(450, 350)
+    Size = UDim2.fromOffset(450, 380)
 })
 
 -- [[ TABS ]] --
 local MainTab = Window:Tab({ Title = "Main", Icon = "home" })
+local CombatTab = Window:Tab({ Title = "Combat", Icon = "crosshair" })
 local AutoTab = Window:Tab({ Title = "Automation", Icon = "cpu" })
 
 -- [[ 1. MAIN TAB: FLY ]] --
@@ -55,29 +57,43 @@ MainTab:Button({
 
 MainTab:Slider({
     Title = "Speed Terbang",
-    Min = 10,
-    Max = 200,
-    Default = 50,
+    Min = 10, Max = 200, Default = 50,
     Callback = function(v) speed = v end
 })
 
--- [[ 2. AUTOMATION TAB: AUTO GEN ]] --
-AutoTab:Toggle({
-    Title = "Auto Repair Generator",
-    Description = "Otomatis memperbaiki generator terdekat",
-    Callback = function(state) 
-        autoGen = state 
-    end
+-- [[ 2. COMBAT TAB: AUTO DAGGER ]] --
+CombatTab:Toggle({
+    Title = "Auto Dagger / Attack",
+    Description = "Otomatis menyerang jika memegang Dagger",
+    Callback = function(state) autoDagger = state end
 })
 
--- [[ LOGIC CORE: AUTO GEN ]] --
+-- [[ 3. AUTOMATION TAB: AUTO GEN ]] --
+AutoTab:Toggle({
+    Title = "Auto Repair Generator",
+    Callback = function(state) autoGen = state end
+})
+
+-- ==================== LOGIC CORE ====================
+
+-- LOGIC: AUTO DAGGER
+task.spawn(function()
+    while task.wait(0.1) do
+        if autoDagger then
+            local tool = player.Character:FindFirstChildOfClass("Tool")
+            if tool and (tool.Name:lower():find("dagger") or tool.Name:lower():find("knife")) then
+                tool:Activate() -- Menekan/Klik Dagger otomatis
+            end
+        end
+    end
+end)
+
+-- LOGIC: AUTO GEN
 task.spawn(function()
     while task.wait(0.5) do
         if autoGen then
-            -- Cari Generator terdekat (Logika dasar: mencari objek bernama 'Generator')
             for _, obj in pairs(workspace:GetDescendants()) do
                 if obj.Name == "Generator" and obj:FindFirstChild("RemoteEvent") then
-                    -- Contoh logika: Mengirim signal repair ke server
                     obj.RemoteEvent:FireServer("Repair") 
                 end
             end
@@ -87,6 +103,6 @@ end)
 
 Window:Notification({
     Title = "VILHUB UPDATED",
-    Content = "Fitur Auto Gen Berhasil Ditambahkan!",
+    Content = "Fitur Auto Dagger & Auto Gen Siap!",
     Duration = 5
 })
